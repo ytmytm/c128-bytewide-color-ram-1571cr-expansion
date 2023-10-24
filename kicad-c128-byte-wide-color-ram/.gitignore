@@ -1,0 +1,7 @@
+*-backups
+fp-info-cache
+sym-lib-table
+*.ses
+*.dsn
+*.jpg
+*.pdf
