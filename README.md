@@ -189,7 +189,7 @@ Here is how it looks like. Don't mind the orange and yellow wires. These are jum
 
 Once the assembled PCB is plugged into place of original SRAM (U103) (*mind the orientation*) you need to connect four additional wires to the mainboard: the new address lines.
 
-In the prototype I soldered them directly to the CPU (U101), but I don't like this solution in the long run:
+In the prototype I soldered them directly to the CPU (U101) pins 20, 22, 23 and 24, but I don't like this solution in the long run:
 
 <img src="media/1571cr-cpu-lines.jpg" alt="1571CR daughterboard with address lines connected to CPU">
 
