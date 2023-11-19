@@ -43,7 +43,9 @@ In C64 mode this port decides about RAM/ROM configuration, in C128 mode lower tw
 It only made sense to me to extend this further and use other $01 port bits to provide more address lines for 32K Color RAM expansion. None of my C128s will be ever used with tape (or even TapeCart), so I connected A11-13 lines to
 lines normally used by tape motor control, tape write and sense bits. This provides 13 bits of address, so 16K total.
 
-Until I have a better idea where to connect A14 I will be happy with using 16K of that RAM. That's enough for 16 full screens - 8 for imaginary FLI mode with color ram switched every line and another 8 for interlaced option.
+You don't need to connect all of them or you can skip it altogether. I have reused connections to onboard pull-up resistors to pull these address lines high if nothing is connecte to the solder pads.
+
+Until I have a better idea where to connect A14 I will be happy with using 16K of that RAM. That's enough for 16 full screens: 8 for imaginary FLI mode with color ram switched every line and another 8 for interlaced option.
 
 ## Assembly
 
@@ -55,7 +57,7 @@ Parts needed:
 - 24-pin socket for 2K SRAM (2016) *or* 28-pin socket for 32K SRAM (62256)
 - 8x2K RAM (ideally 2016 desoldered from the board) *or* 8x32K SRAM (62256)
 
-In any case you need to remove or desolder the original 2K chip (U19) and replace it by a 24-pin socket. PCB is meant to be equipped with round pins and be plugged into that socket.
+In any case you need to remove or desolder the original 2K chip (U19) and replace it by a 24-pin socket. PCB is meant to be equipped with round pins and plugged into that socket.
 We also need some signals from the board, so additional wires will be needed.
 
 Start assembly by soldering in two rows of 24 round pins that will be used to plug in PCB to the C128/D/DCR mainboard.
@@ -98,6 +100,7 @@ Here is how it can look like on C128D. It's already a mess off wires on that mac
 
 - YELLOW points show AEC connection to U20
 - ORANGE points show A11/A12/A13 connections to two vias and one side of R4 resistor
+- A14 is not connected to anything
 - data lines D4-D7 are connected to character ROM adapter nearby
 
 ## Testing
@@ -143,13 +146,13 @@ I found a [memory map on zimmers.net](http://www.zimmers.net/anonftp/pub/cbm/sch
 that described $6000-$7FFF range as "RAM shadows", so I conducted an experiment.
 
 I have removed U103 (2016 2K SRAM) and put in this place a 24 to 28 pin adapter for 62256 (32K SRAM) and I connected A11-A14 directly to U101 (6502 CPU).
-Lo and behold - it works with no extra parts. I was able to copy disks with Maverick v5 RAMBoard nibbler.
+It worked right away with no extra parts. I was able to copy disks with Maverick v5 RAMBoard nibbler.
 
-After more testing I saw that RAM is actualy present in both the $0000-$0FFF and $6000-$7FFF ranges, providing a total of 12K available.
+After more testing I saw that RAM is actualy present also in $0800-$0FFF range. In both $0000-$0FFF and $6000-$7FFF ranges that provides a total of 12K available.
 
 ## Why?
 
-The only purpose seems to be Maverick v5 RAMBoard nibbler. DolphinDOS uses extra memory but there is no way to add a parallel port to 1571CR in a way DolphinDOS expects - all these VIA port lines are
+The only purpose seems to be [Maverick v5 RAMBoard nibbler](https://csdb.dk/release/?id=18107). [DolphinDOS uses extra memory](https://e4aws.silverdr.com/projects/dolphindos3/) but there is no way to add a parallel port to 1571CR in a way DolphinDOS expects - all these VIA port lines are
 already used.
 
 In Maverick to go 'GCR Nibbler' option and choose 'RAMBoard'. In further settings choose $6000-$7FFF area for RAM.
@@ -163,26 +166,26 @@ Parts needed:
 - 28-pin socket for 32K SRAM (62256)
 - 8x32K SRAM (62256)
 
-You need to remove or desolder the original 2K chip (U103) and replace it by a 24-pin socket. PCB is meant to be equipped with round pins and be plugged into that socket.
+You need to remove or desolder the original 2K chip (U103) and replace it by a 24-pin socket. PCB is meant to be equipped with round pins and plugged into that socket.
 We also need some signals from the board, so additional wires will be needed.
 
 Start assembly by soldering in two rows of 24 round pins that will be used to plug in PCB to the C128DCR mainboard.
 
-For this project you need to solder them in the middle row of holes from the PCB edge, on the image below marked by GREEN.
+For this project you need to leave RED holes unoccupied and solder round pins in the middle row of holes from the PCB edge, on the image below marked by GREEN.
 
 <img src="media/PCB_top-8bitRAM.png" alt="colour-coded pins">
 
-Solder 28-pin socket in holes marked YELLOW and leave RED holes unoccupied, they won't be used. You don't need to do anything about place for 14-pin 4066, that won't be used either.
+Solder 28-pin socket in holes marked YELLOW. You don't need to do anything about 14-pin 4066 either, that won't be used.
 
-Here is how it looks like. Don't mind the orange and yellow wires - these are jumpers that fix my mistake in the first version of the board. Current project has it already fixed.
+Here is how it looks like. Don't mind the orange and yellow wires. These are jumpers that I missed to route in the first version of the board. Current project has it already fixed.
 
 <img src="media/1571cr-expanded-pcb.jpg" alt="1571CR daughterboard closeup">
 
 ## Installation
 
-Once the assembled PCB is plugged into place of original SRAM (U103) (*mind the orientation*) you need to connect four additional wires to the mainboard - the new address lines.
+Once the assembled PCB is plugged into place of original SRAM (U103) (*mind the orientation*) you need to connect four additional wires to the mainboard: the new address lines.
 
-In the prototype I soldered them directly to the CPU, but I don't like this solution in the long run:
+In the prototype I soldered them directly to the CPU (U101), but I don't like this solution in the long run:
 
 <img src="media/1571cr-cpu-lines.jpg" alt="1571CR daughterboard with address lines connected to CPU">
 
