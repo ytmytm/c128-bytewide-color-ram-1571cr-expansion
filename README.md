@@ -4,7 +4,7 @@
 This is a 24 to 28 pin adapter PCB that can be used for three different C128 modifications:
 
 - widen 2K Color RAM to 8 bits (C128/C128D/C128DCR)
-- widen Color RAM to 8 bits and expand to 32K (C128/C128/C128DCR)
+- widen Color RAM to 8 bits and expand to 32K (C128/C128D/C128DCR)
 - RAM Expansion for 1571CR compatible with Maverick (C128DCR only)
 
 ## Schematic
@@ -17,6 +17,8 @@ PDF plot of [the schematic can be found here](kicad/plots/kicad-c128-byte-wide-c
 
 [kicad/plots](kicad/plots) folder contains Gerber files for manufacturing a PCB for any of these projects.
 
+<img src="kicad/plots/PCB_top.png" alt="Top side of the PCB"><img src="kicad/plots/PCB_bot.png" alt="Bottom side of the PCB">
+
 # 8-bit Color RAM
 
 ## Background
@@ -28,6 +30,8 @@ This project replicates part of the onboard circuit and adds a quad switch 4066 
 Like the onboard U20 (4066) it switches Color RAM on/off bus, depending on the state of AEC line.
 
 <img src="media/bytewide4-8.gif" alt="Schematic from http://www.sdiy.org/richardc64/color/byte.html">
+
+Note: this schematic shows the general idea. Don't cut anything on the mainboard and don't piggyback chips
 
 ## Why?
 
@@ -52,7 +56,7 @@ Until I have a better idea where to connect A14 I will be happy with using 16K o
 Parts needed:
 
 - 24-pin socket to be soldered in place of removed U19
-- two sets of 24 round pins
+- two sets of 12 round pins (24 total)
 - 4066 analog quad switch and 14-pin socket for it
 - 24-pin socket for 2K SRAM (2016) *or* 28-pin socket for 32K SRAM (62256)
 - 8x2K RAM (ideally 2016 desoldered from the board) *or* 8x32K SRAM (62256)
@@ -162,7 +166,7 @@ In Maverick to go 'GCR Nibbler' option and choose 'RAMBoard'. In further setting
 Parts needed:
 
 - 24-pin socket to be soldered in place of removed U103
-- two sets of 24 round pins
+- two sets of 12 round pins (24 total)
 - 28-pin socket for 32K SRAM (62256)
 - 8x32K SRAM (62256)
 
