@@ -51,6 +51,9 @@ You don't need to connect all of them or you can skip it altogether. I have reus
 
 Until I have a better idea where to connect A14 I will be happy with using 16K of that RAM. That's enough for 16 full screens: 8 for imaginary FLI mode with color ram switched every line and another 8 for interlaced option.
 
+Note that a lot of C64 software will write to CPU port ($01) location and can modify the status of tape control bits. If you're not planning to use tape device I highly recommend patching the ROM (details below)
+to set these bits as input by default. This completely removes the problem as virtually no software modifies CPU port direction register ($00).
+
 ## Assembly
 
 Parts needed:
@@ -135,6 +138,27 @@ POKE 1, X OR (8+16)
 POKE 1, X OR 32
 ...
 ```
+
+## Patching ROM (32K Color RAM)
+
+C64/128 ROM will set the CPU port direction register ($00) to value $2F. This sets up bits 5 and 3 as outputs because they control tape motor and tape write lines. However a lot of C64 software will write to CPU port ($01)
+and modify bits 3/4/5 that we allocated to select Color RAM banks. This doesn't break anything but may cause flicker or random screen colors during some operations (e.g. decompressing) - as if Color RAM was faulty.
+
+An easy way to fix this is to patch Kernal C64 and C128 to set $00 to make all bits 3/4/5 as inputs by default. This can be easy accomplished with a hex editor such as [HxD](https://mh-nexus.de/en/hxd/).
+
+For a 32K ROM for C128DCR (U32), or C128D modified to use 32K chips, use this already patched file: [U32.complete.318023-02-patched.bin](rom/U32.complete.318023-02-patched.bin).
+
+1. Dump from onboard chips (or download from [zimmers.net](http://www.zimmers.net/anonftp/pub/cbm/firmware/computers/c128/index.html) ROM appropriate to your C128: 16K for unmodified C128D or 32K for C128DCR
+
+2. Use hex editor to patch the ROM - search for values `A9 2F 85 00` and replace `2F` by `07`. In American ROM (complete.318023-02.bin) that value appears at offsets:
+
+- `$3DDA` - C64 Kernal soft reset (real address `$FDDA`)
+- `$613D` - C128 Kernal soft reset (real address `$FE13D`)
+- `$6250` - C128 Kernal GO64 (real address `$FE250`)
+
+3. If you have JiffyDOS or a 64K ROM with a switch that value will appear three more times in the second 32K half of the ROM. Patch it as well from `2F` to `07`.
+
+4. Save and flash into a new EEPROM to replace onboard ROM U32 (DCR)
 
 # 1571CR RAM expansion
 
