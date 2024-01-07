@@ -160,6 +160,18 @@ For a 32K ROM for C128DCR (U32), or C128D modified to use 32K chips, use this al
 
 4. Save and flash into a new EEPROM to replace onboard ROM U32 (DCR)
 
+## Patching VICE (32K Color RAM)
+
+If you can recompile [VICE](https://vice-emu.sourceforge.io/) on your own, here is a patch to enable 32K Color RAM emulation.
+
+[ytm-c128-colorram-expansion.patch](vice/ytm-c128-colorram-expansion.patch)
+
+This is based off VICE 3.8 release (28 December 2023, revision 44935).
+
+You will find new option in `Settings -> Machine -> Mode -> Miscellaneous -> Expand color RAM...`.
+
+This can be passed also from command line via `-c128colorramexpansion` option.
+
 # 1571CR RAM expansion
 
 ## Background

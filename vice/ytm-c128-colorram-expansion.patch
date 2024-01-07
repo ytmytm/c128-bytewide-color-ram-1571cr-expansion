@@ -1,0 +1,208 @@
+Index: vice/doc/vice.texi
+===================================================================
+--- vice/doc/vice.texi	(revision 44935)
++++ vice/doc/vice.texi	(working copy)
+@@ -13500,6 +13500,10 @@
+ @item C128FullBanks
+ Boolean to enable/disable RAM banks 2 and 3.
+ 
++@vindex C128ColorRAMExpansion
++@item C128ColorRAMExpansion
++Boolean to enable/disable color RAM expansion to 16K controlled by CPU port bits 3, 4 and 5.
++
+ @vindex MachineType
+ @item MachineType
+ Integer specifying the C128 machine type.
+@@ -13581,6 +13585,12 @@
+ Enable/disable RAM banks 2 and 3
+ (@code{C128FullBanks=1}, @code{C128FullBanks=0}).
+ 
++@findex -c128colorramexpansion, +c128colorramexpansion
++@item -c128colorramexpansion
++@itemx +c128colorramexpansion
++Enable/disable color RAM expansion to 16K controlled by CPU port bits 3, 4 and 5
++(@code{C128ColorRAMExpansion=1}, @code{C128ColorRAMExpansion=0}).
++
+ @findex -machinetype
+ @item -machinetype <Type>
+ Set the C128 machine type
+Index: vice/src/arch/gtk3/widgets/settings_model.c
+===================================================================
+--- vice/src/arch/gtk3/widgets/settings_model.c	(revision 44935)
++++ vice/src/arch/gtk3/widgets/settings_model.c	(working copy)
+@@ -1047,6 +1047,16 @@
+             "Always switch to C64 mode on reset");
+ }
+ 
++/** \brief  Create widget to toggle "C128ColorRAMExpansion"
++ *
++ * \return  GtkGrid
++ */
++static GtkWidget *create_c128colorramexpansion_widget(void)
++{
++    return vice_gtk3_resource_check_button_new("C128ColorRAMExpansion",
++            "Expand color RAM to 16K using CPU port bits 3/4/5");
++}
++
+ /** \brief  Sync "Glue Logic" widget with the associated resource
+  *
+  */
+@@ -1174,6 +1184,7 @@
+     GtkWidget *grid;
+     GtkWidget *label;
+     GtkWidget *go64_widget;
++    GtkWidget *c128_colorramexp_widget;
+ 
+     /* no row spacing, we use a margin since more widgets might be added in
+      * the future for which we don't want extra row spacing */
+@@ -1184,9 +1195,11 @@
+     gtk_widget_set_margin_bottom(label, 8);
+ 
+     go64_widget = create_go64_widget();
++    c128_colorramexp_widget = create_c128colorramexpansion_widget();
+ 
+     gtk_grid_attach(GTK_GRID(grid), label,       0, 0, 1, 1);
+     gtk_grid_attach(GTK_GRID(grid), go64_widget, 0, 1, 1, 1);
++    gtk_grid_attach(GTK_GRID(grid), c128_colorramexp_widget, 0, 2, 1, 1);
+ 
+     gtk_widget_show_all(grid);
+     return grid;
+Index: vice/src/arch/sdl/menu_c128hw.c
+===================================================================
+--- vice/src/arch/sdl/menu_c128hw.c	(revision 44935)
++++ vice/src/arch/sdl/menu_c128hw.c	(working copy)
+@@ -224,6 +224,7 @@
+ 
+ UI_MENU_DEFINE_TOGGLE(IEEE488)
+ UI_MENU_DEFINE_TOGGLE(C128FullBanks)
++UI_MENU_DEFINE_TOGGLE(C128ColorRAMExpansion)
+ UI_MENU_DEFINE_TOGGLE(Go64Mode)
+ 
+ const ui_menu_entry_t c128_hardware_menu[] = {
+@@ -290,6 +291,10 @@
+         .type     = MENU_ENTRY_RESOURCE_TOGGLE,
+         .callback = toggle_C128FullBanks_callback
+     },
++    {   .string   = "Color RAM expansion",
++        .type     = MENU_ENTRY_RESOURCE_TOGGLE,
++        .callback = toggle_C128ColorRAMExpansion_callback
++    },
+     {   .string   = "ROM settings",
+         .type     = MENU_ENTRY_SUBMENU,
+         .callback = submenu_callback,
+Index: vice/src/c128/c128-cmdline-options.c
+===================================================================
+--- vice/src/c128/c128-cmdline-options.c	(revision 44935)
++++ vice/src/c128/c128-cmdline-options.c	(working copy)
+@@ -187,6 +187,12 @@
+     { "+c128fullbanks", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
+       NULL, NULL, "C128FullBanks", (void *)0,
+       NULL, "Disable RAM banks 2 and 3" },
++    { "-c128colorramexpansion", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
++      NULL, NULL, "C128ColorRAMExpansion", (void *)1,
++      NULL, "Enable color RAM expansion" },
++    { "+c128colorramexpansion", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
++      NULL, NULL, "C128ColorRAMExpansion", (void *)0,
++      NULL, "Disable color RAM expansion" },
+     { "-hidevdcwindow", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
+       NULL, NULL, "C128HideVDC", (void *)1,
+       NULL, "Hide the VDC window" },
+Index: vice/src/c128/c128-resources.c
+===================================================================
+--- vice/src/c128/c128-resources.c	(revision 44935)
++++ vice/src/c128/c128-resources.c	(working copy)
+@@ -123,6 +123,8 @@
+ /* Flag: Do we enable the emulation of banks 2 and 3 of ram? */
+ int c128_full_banks = 0;
+ 
++/* Flag: Do we enable the emulation of color RAM expansion to 16K via CPU port P3/4/5? */
++int c128_colorram_expansion = 0;
+ 
+ /* Hide the VDC window
+  */
+@@ -142,6 +144,13 @@
+     return 0;
+ }
+ 
++static int set_c128_colorram_expansion(int val, void *param)
++{
++    c128_colorram_expansion = val ? 1 : 0;
++
++    return 0;
++}
++
+ static int set_machine_type(int val, void *param)
+ {
+     unsigned int type = (unsigned int)val;
+@@ -671,6 +680,8 @@
+       (int *)&sid8_address_start, sid_set_sid8_address, NULL },
+     { "C128FullBanks", 0, RES_EVENT_NO, NULL,
+       (int *)&c128_full_banks, set_c128_full_banks, NULL },
++    { "C128ColorRamExpansion", 0, RES_EVENT_NO, NULL,
++      (int *)&c128_colorram_expansion, set_c128_colorram_expansion, NULL },
+     { "C128HideVDC", 0, RES_EVENT_NO, NULL,
+         &c128_hide_vdc, set_c128_hide_vdc, NULL },
+     RESOURCE_INT_LIST_END
+Index: vice/src/c128/c128-resources.h
+===================================================================
+--- vice/src/c128/c128-resources.h	(revision 44935)
++++ vice/src/c128/c128-resources.h	(working copy)
+@@ -38,6 +38,7 @@
+ extern int acia_de_enabled;
+ extern int acia_d7_enabled;
+ extern int c128_full_banks;
++extern int c128_colorram_expansion;
+ extern int cia1_model;
+ extern int cia2_model;
+ 
+Index: vice/src/c128/c128mem.c
+===================================================================
+--- vice/src/c128/c128mem.c	(revision 44935)
++++ vice/src/c128/c128mem.c	(working copy)
+@@ -99,7 +99,7 @@
+ uint8_t mem_chargen_rom[C128_CHARGEN_ROM_SIZE];
+ 
+ /* Internal color memory.  */
+-static uint8_t mem_color_ram[0x800];
++static uint8_t mem_color_ram[C128_COLORRAM_SIZE];
+ uint8_t *mem_color_ram_cpu, *mem_color_ram_vicii;
+ 
+ /* Pointer to the chargen ROM.  */
+@@ -547,15 +547,20 @@
+         if (mem_machine_type == C128_MACHINE_INT) {
+             mem_update_chargen(1);
+         }
++        /* expanded color RAM base address shared between CPU and VIC */
++        uint16_t color_ram_offs = 0;
++        if (c128_colorram_expansion) {
++           color_ram_offs = ((pport.data_read >> 3) & 7) << 11;
++        }
+         if (pport.data_read & 1) {
+-            mem_color_ram_cpu = mem_color_ram;
++            mem_color_ram_cpu = &mem_color_ram[color_ram_offs];
+         } else {
+-            mem_color_ram_cpu = &mem_color_ram[0x400];
++            mem_color_ram_cpu = &mem_color_ram[color_ram_offs+0x400];
+         }
+         if (pport.data_read & 2) {
+-            mem_color_ram_vicii = mem_color_ram;
++            mem_color_ram_vicii = &mem_color_ram[color_ram_offs];
+         } else {
+-            mem_color_ram_vicii = &mem_color_ram[0x400];
++            mem_color_ram_vicii = &mem_color_ram[color_ram_offs+0x400];
+         }
+         if (pport.data_read & 4) {
+             vicii_set_chargen_addr_options(0xffff, 0xffff);
+Index: vice/src/c128/c128mem.h
+===================================================================
+--- vice/src/c128/c128mem.h	(revision 44935)
++++ vice/src/c128/c128mem.h	(working copy)
+@@ -37,6 +37,8 @@
+ 
+ #define C128_RAM_SIZE               0x40000
+ 
++#define C128_COLORRAM_SIZE          0x4000  /* 0x0800 unexpanded */
++
+ #define C128_EDITOR_ROM_SIZE        0x1000  /* 0x0000 - 0x0fff in kernal image */
+ #define C128_Z80BIOS_ROM_SIZE       0x1000  /* 0x1000 - 0x1fff in kernal image */
+ #define C128_KERNAL_ROM_SIZE        0x2000  /* 0x2000 - 0x3fff in kernal image */
